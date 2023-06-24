@@ -97,32 +97,32 @@ Once the graph is complete, the source of the graph (the one with no edges point
 
 - Define `MAX_CANDIDATES` for the maximum number of candidates in the election, and `MAX_VOTERS` for the maximum number of voters in the election.
 
-- Define a `struct` called `pair`. This structure will be used to represent a pair of candidates: each pair includes the `winner`’s candidate index and the `loser`’s candidate index.
-
-- Create a two-dimensional array `preferences`. The integer `preferences[i][j]` will represent the number of voters who prefer candidate `i` over candidate `j`.
-
-- Define another two-dimensional array, called `locked`, which will represent the candidate graph. `locked` is a boolean array, so `locked[i][j]` being `true` represents the existence of an edge pointing from candidate `i` to candidate `j`; `false` means there is no edge. (If curious, this representation of a graph is known as an “adjacency matrix”).
-
 - The candidates themselves are stored in the array `candidates`, which is an array of `strings` representing the names of each of the candidates.
-
-- An array of `pairs` will represent all of the pairs of candidates (for which one is preferred over the other) in the election.
-
-- Declare variables: `pair_count` and `candidate_count`, representing the number of pairs and number of candidates in the arrays `pairs` and `candidates`, respectively.
-
-- After determining the number of candidates, the program loops through the `locked` graph and initially sets all of the values to `false`, which means our initial graph will have no edges in it.
+- Declare `candidate_count` variable, representing the number of candidates in the `candidates` array.
 
 - Next, the program loops over all of the voters and collects their preferences in an array called `ranks` (via a call to `vote` function), where `ranks[i]` is the index of the candidate who is the `i`th preference for the voter.
   - `vote` takes arguments `rank`, `name` and `ranks`. If `name` is a match for the name of a valid candidate, then you should update the `ranks` array to indicate that the voter `voter` has that candidate as their `rank` preference (where `0` is the first preference, `1` is the second preference, etc.).
   - The function should return `true` if the rank was successfully recorded, and `false` otherwise (if, for instance, name is not the name of one of the candidates).
   - You may assume that no two candidates will have the same name.
 
-- The function `record_preference` is called once for each voter, and takes as argument the `ranks` array, (recall that `ranks[i]` is the voter’s ith preference, where `ranks[0]` is the first preference).
-  - The function should update the `preferences` array to add the current voter’s preferences. Recall that `preferences[i][j]` should represent the number of voters who prefer candidate `i` over candidate `j`.
+- Create a two-dimensional array `preferences`. The integer `preferences[i][j]` will represent the number of voters who prefer candidate `i` over candidate `j`.
+
+- The function `record_preference` is called once for each voter, and takes as argument the `ranks` array, (recall that `ranks[i]` is the voter’s `i`th preference, where `ranks[0]` is the first preference).
+  - The function should update the `preferences` array to add the current voter’s preferences.
   - You may assume that every voter will rank each of the candidates.
+
+- An array of `pairs` will represent all of the pairs of candidates (for which one is preferred over the other) in the election.
+- Declare `pair_count` variable, representing the number of pairs in the arrays `pairs`.
 
 - Once all of the votes are in, the pairs of candidates are added to the `pairs` array via a call to `add_pairs`.
   - The function should add all pairs of candidates where one candidate is preferred to the `pairs` array. A pair of candidates who are tied (one is not preferred over the other) should not be added to the array.
   - The function should update the variable `pair_count` to be the number of pairs of candidates. (The pairs should thus all be stored between `pairs[0]` and `pairs[pair_count - 1]`, inclusive).
+
+- Define a `struct` called `pair`. This structure will be used to represent a pair of candidates: each pair includes the `winner`’s candidate index and the `loser`’s candidate index.
+
+- Define another two-dimensional array, called `locked`, which will represent the candidate graph. `locked` is a boolean array, so `locked[i][j]` being `true` represents the existence of an edge pointing from candidate `i` to candidate `j`; `false` means there is no edge. (If curious, this representation of a graph is known as an “adjacency matrix”).
+
+- Loop through the `locked` graph and initially set all of the values to `false`, which means our initial graph will have no edges in it.
 
 - The `sort_pairs` function should sort the `pairs` array in decreasing order of strength of victory, where strength of victory is defined to be the number of voters who prefer the preferred candidate. If multiple pairs have the same strength of victory, you may assume that the order does not matter.
 
