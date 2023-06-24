@@ -103,16 +103,19 @@ int main(int argc, char *argv[])
 
         record_preference(ranks, preferences, candidate_count);
 
+        // DEBUG record_preference
+        for (int i = 0; i < candidate_count; i++)
+        {
+            for (int j = 0; j < candidate_count; j++)
+            {
+                printf ("Candidate %i is over %i by %i\n", i, j, preferences[i][j]);
+            }
+        }
+
         printf ("\n");
     }
 
-    for (int i = 0; i < preferences_length; i++)
-    {
-        for (int j = 0; j < preferences_length; j++)
-        {
-            printf ("Candidate %i is over %i by %i\n", i, j, preferences[i][j]);
-        }
-    }
+    // Add pairs into 
 
     return EXIT_FAILURE;
 }
@@ -134,9 +137,12 @@ bool vote(int rank, char name[MAX_CHARS], int ranks[MAX_CANDIDATES], char candid
 
 bool record_preference(int ranks[MAX_CANDIDATES], int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int candidate_count)
 {
-    for (int rank = 0; rank < candidate_count - 1; rank++)
+    for (int i = 0; i < candidate_count - 1; i++)
     {
-        preferences[ranks[rank]][ranks[rank + 1]]++;
+        for (int j = i + 1; j < candidate_count; j++)
+        {
+            preferences[ranks[i]][ranks[j]]++;
+        }   
     }
 
     return true;
