@@ -12,13 +12,13 @@
 
 struct pair
 {
-    int winner;
-    int loser;
+    int Winner;
+    int Loser;
 };
 
 bool vote(int rank, char name[MAX_CHARS], int ranks[MAX_CANDIDATES], char candidates[MAX_CANDIDATES][MAX_CHARS], int candidate_count);
 bool record_preference(int ranks[MAX_CANDIDATES], int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int candidate_count);
-
+int add_pairs(int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int preference_length, int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH]);
 
 int main(int argc, char *argv[])
 {
@@ -61,9 +61,6 @@ int main(int argc, char *argv[])
     // ranks[i] is the index of the candidate who is the i-th preference for the voter
     int ranks[candidate_count];
 
-    // Calculate how much should be the array for preferences
-    const int preferences_length = candidate_count * (candidate_count - 1);
-
     // preferences[i][j] represents the number of voters who prefer candidate i over candidate j
     int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH];
 
@@ -103,19 +100,49 @@ int main(int argc, char *argv[])
 
         record_preference(ranks, preferences, candidate_count);
 
-        // DEBUG record_preference
-        for (int i = 0; i < candidate_count; i++)
-        {
-            for (int j = 0; j < candidate_count; j++)
-            {
-                printf ("Candidate %i is over %i by %i\n", i, j, preferences[i][j]);
-            }
-        }
-
         printf ("\n");
     }
 
-    // Add pairs into 
+    // DEBUG record_preference
+    // for (int i = 0; i < candidate_count; i++)
+    // {
+    //     for (int j = 0; j < candidate_count; j++)
+    //     {
+    //         if (preferences[i][j] != 0)
+    //         {
+    //             printf ("Candidate %i is over %i by %i\n", i, j, preferences[i][j]);   
+    //         }
+    //     }
+    // }
+
+
+    // Pairs score 
+    int pairs[MAX_PREFERENCE_LENGTH];
+    int pair_count;
+
+    // To save index of the winner and loser in a pair
+    struct pair pair[MAX_PREFERENCE_LENGTH];
+
+    // Clear pairs array and pair structure
+    for (int i = 0; i < MAX_PREFERENCE_LENGTH; i++)
+    {
+        pairs[i] = 0;
+
+        pair[i].Winner = 0;
+        pair[i].Loser = 0;
+    }
+
+    
+    pair_count = add_pairs(preferences, MAX_PREFERENCE_LENGTH, pairs, pair);
+
+    printf ("pair_count = %i\n", pair_count);
+
+    //DEBUG add_pairs
+    // for (int i = 0; i < pair_count; i++)
+    // {
+    //     printf ("Candidate %i wins over %i by %i\n", pair[i].Winner, pair[i].Loser, pairs[i]);
+    // }
+
 
     return EXIT_FAILURE;
 }
@@ -148,9 +175,37 @@ bool record_preference(int ranks[MAX_CANDIDATES], int preferences[MAX_PREFERENCE
     return true;
 }
 
-bool add_pairs()
+// The function returns the pair count
+int add_pairs(int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int preference_length, int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH])
 {
+    int pair_count = 0;
 
+    for (int i = 0; i < preference_length - 1; i++)
+    {
+        for (int j = i + 1; j < preference_length; j++)
+        {
+            if (preferences[i][j] > preferences[j][i])
+            {
+                pairs[pair_count] = preferences[i][j];
+
+                pair_ref[pair_count].Winner = i;
+                pair_ref[pair_count].Loser = j;
+
+                pair_count++;
+            }
+            else if (preferences[i][j] < preferences[j][i])
+            {
+                pairs[pair_count] = preferences[j][i];
+
+                pair_ref[pair_count].Winner = j;
+                pair_ref[pair_count].Loser = i;
+
+                pair_count++;
+            }
+        }
+    }
+
+    return pair_count;
 }
 
 bool sort_pairs()
