@@ -19,6 +19,7 @@ struct pair
 bool vote(int rank, char name[MAX_CHARS], int ranks[MAX_CANDIDATES], char candidates[MAX_CANDIDATES][MAX_CHARS], int candidate_count);
 bool record_preference(int ranks[MAX_CANDIDATES], int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int candidate_count);
 int add_pairs(int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int preference_length, int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH]);
+bool sort_pairs(int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH], int pair_count);
 
 int main(int argc, char *argv[])
 {
@@ -104,16 +105,17 @@ int main(int argc, char *argv[])
     }
 
     // DEBUG record_preference
-    // for (int i = 0; i < candidate_count; i++)
-    // {
-    //     for (int j = 0; j < candidate_count; j++)
-    //     {
-    //         if (preferences[i][j] != 0)
-    //         {
-    //             printf ("Candidate %i is over %i by %i\n", i, j, preferences[i][j]);   
-    //         }
-    //     }
-    // }
+    printf ("\nRecord Preferences\n");
+    for (int i = 0; i < candidate_count; i++)
+    {
+        for (int j = 0; j < candidate_count; j++)
+        {
+            if (preferences[i][j] != 0)
+            {
+                printf ("Candidate %i is over %i by %i\n", i, j, preferences[i][j]);   
+            }
+        }
+    }
 
 
     // Pairs score 
@@ -135,13 +137,21 @@ int main(int argc, char *argv[])
     
     pair_count = add_pairs(preferences, MAX_PREFERENCE_LENGTH, pairs, pair);
 
-    printf ("pair_count = %i\n", pair_count);
-
     //DEBUG add_pairs
-    // for (int i = 0; i < pair_count; i++)
-    // {
-    //     printf ("Candidate %i wins over %i by %i\n", pair[i].Winner, pair[i].Loser, pairs[i]);
-    // }
+    printf ("\nAdd pairs\n");
+    for (int i = 0; i < pair_count; i++)
+    {
+        printf ("Candidate %i wins over %i by %i\n", pair[i].Winner, pair[i].Loser, pairs[i]);
+    }
+
+    sort_pairs(pairs, pair, pair_count);
+
+    //DEBUG sort_pairs
+    printf ("\nSorted pairs in decreasing order:\n");
+    for (int i = 0; i < pair_count; i++)
+    {
+        printf ("Candidate %i wins over %i by %i\n", pair[i].Winner, pair[i].Loser, pairs[i]);
+    }
 
 
     return EXIT_FAILURE;
@@ -208,9 +218,37 @@ int add_pairs(int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int
     return pair_count;
 }
 
-bool sort_pairs()
+bool sort_pairs(int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH], int pair_count)
 {
+    for (int i = 0; i < pair_count - 1; i++)
+    {
+        bool is_no_change = true; 
 
+        for (int j = 0; j < pair_count - 1; j++)
+        {
+            if (pairs[j] < pairs[j + 1])
+            {
+                int temp = pairs[j];
+                pairs[j] = pairs[j + 1];
+                pairs[j + 1] = temp;
+
+                temp = pair_ref[j].Winner;
+                pair_ref[j].Winner = pair_ref[j + 1].Winner;
+                pair_ref[j + 1].Winner = temp;
+
+                temp = pair_ref[j].Loser;
+                pair_ref[j].Loser = pair_ref[j + 1].Loser;
+                pair_ref[j + 1].Loser = temp;
+
+                is_no_change = false;
+            }
+        }
+
+        if (is_no_change)
+        {
+            return true;
+        }
+    }
 }
 
 bool lock_pairs()
