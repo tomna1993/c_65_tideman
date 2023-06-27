@@ -50,9 +50,9 @@ Ranked choice voting can also solve yet another potential drawback of plurality 
 
 ![ranked](./image/ranked_ballot_3.png)
 
-Who should win this election? In a plurality vote where each voter chooses their first preference only, Charlie wins this election with four votes compared to only three for Bob and two for Alice. (Note that, if you’re familiar with the instant runoff voting system, Charlie wins here under that system as well). Alice, however, might reasonably make the argument that she should be the winner of the election instead of Charlie: after all, of the nine voters, a majority (five of them) preferred Alice over Charlie, so most people would be happier with Alice as the winner instead of Charlie.
+Who should win this election? In a plurality vote where each voter chooses their first preference only, Charlie wins this election with four votes compared to only three for Bob and two for Alice. Note that, if you’re familiar with the instant runoff voting system, Bob wins under that system.
 
-Alice is, in this election, the so-called “Condorcet winner” of the election: the person who would have won any head-to-head matchup against another candidate. If the election had been just Alice and Bob, or just Alice and Charlie, Alice would have won.
+Bob is, in this election, the so-called “Condorcet winner” of the election: the person who would have won any head-to-head matchup against another candidate. If the election had been just Bob and Alice, or just Bob and Charlie, Bob would have won.
 
 The Tideman voting method (also known as “ranked pairs”) is a ranked-choice voting method that’s guaranteed to produce the Condorcet winner of the election if one exists.
 
@@ -60,9 +60,9 @@ Generally speaking, the Tideman method works by constructing a “graph” of ca
 
 ![condorcet graph](./image/condorcet_graph_1.png)
 
-The arrow from Alice to Bob means that more voters prefer Alice to Bob (5 prefer Alice, 4 prefer Bob). Likewise, the other arrows mean that more voters prefer Alice to Charlie, and more voters prefer Charlie to Bob.
+The arrow from Bob to Alice means that more voters prefer Bob to Alice (5 prefer Bob, 4 prefer Alice). Likewise, the other arrows mean that more voters prefer Bob to Charlie, and more voters prefer Alice to Charlie.
 
-Looking at this graph, the Tideman method says the winner of the election should be the “source” of the graph (i.e. the candidate that has no arrow pointing at them). In this case, the source is Alice — Alice is the only one who has no arrow pointing at her, which means nobody is preferred head-to-head over Alice. Alice is thus declared the winner of the election.
+Looking at this graph, the Tideman method says the winner of the election should be the “source” of the graph (i.e. the candidate that has no arrow pointing at them). In this case, the source is Bob — Bob is the only one who has no arrow pointing at him, which means nobody is preferred head-to-head over Bob. Bob is thus declared the winner of the election.
 
 It’s possible, however, that when the arrows are drawn, there is no Condorcet winner. Consider the below ballots.
 
@@ -120,11 +120,11 @@ Once the graph is complete, the source of the graph (the one with no edges point
 
 - Define a `struct` called `pair`. This structure will be used to represent a pair of candidates: each pair includes the `winner`’s candidate index and the `loser`’s candidate index.
 
+- The `sort_pairs` function should sort the `pairs` array in decreasing order of strength of victory, where strength of victory is defined to be the number of voters who prefer the preferred candidate. If multiple pairs have the same strength of victory, you may assume that the order does not matter.
+
 - Define another two-dimensional array, called `locked`, which will represent the candidate graph. `locked` is a boolean array, so `locked[i][j]` being `true` represents the existence of an edge pointing from candidate `i` to candidate `j`; `false` means there is no edge. (If curious, this representation of a graph is known as an “adjacency matrix”).
 
 - Loop through the `locked` graph and initially set all of the values to `false`, which means our initial graph will have no edges in it.
-
-- The `sort_pairs` function should sort the `pairs` array in decreasing order of strength of victory, where strength of victory is defined to be the number of voters who prefer the preferred candidate. If multiple pairs have the same strength of victory, you may assume that the order does not matter.
 
 - The `lock_pairs` function should create the locked graph, adding all edges in decreasing order of victory strength so long as the edge would not create a cycle.
 
