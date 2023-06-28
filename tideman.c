@@ -7,6 +7,7 @@
 
 #define MAX_CANDIDATES 9
 #define MAX_VOTERS 9
+#define MAX_LOOP 10
 
 #define MAX_PREFERENCE_LENGTH (MAX_CANDIDATES * (MAX_CANDIDATES - 1))
 
@@ -21,12 +22,13 @@ bool record_preference(int ranks[MAX_CANDIDATES], int preferences[MAX_PREFERENCE
 int add_pairs(int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int preference_length, int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH]);
 bool sort_pairs(int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH], int pair_count);
 bool lock_pairs(struct pair pair_ref[MAX_PREFERENCE_LENGTH], int pair_count, int candidate_count, bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH]);
-bool find_cycle(int winner, int loser, bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int candidate_count);
+bool is_cycle(int winner, int loser, bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int candidate_count);
 bool print_winner(bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], char candidates[MAX_CANDIDATES][MAX_CHARS], int candidate_count);
 
 
 int main(int argc, char *argv[])
 {
+    // Save number of candidates
     const int candidate_count = argc - 1;
 
     if (candidate_count < 1 || candidate_count > MAX_CANDIDATES)
@@ -35,7 +37,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    char candidates[candidate_count][MAX_CHARS];
+    // Array to save names of candidates
+    char candidates[MAX_CANDIDATES][MAX_CHARS];
 
     // Save candidate names into candidates array
     for (int cand = 0; cand < candidate_count; cand++)
@@ -43,6 +46,8 @@ int main(int argc, char *argv[])
         strcpy(candidates[cand], argv[cand + 1]);
     }
 
+
+    // Get the number of voters
     int number_of_voters;
 
     do
@@ -84,25 +89,37 @@ int main(int argc, char *argv[])
         for (int rank = 0; rank < candidate_count; rank++)
         {
             bool valid_vote;
+            int loop = 0;
 
-            while (true)
+            // If there is more then 10 invalid inputs then exit loop and stop the program with an error
+            while (loop < MAX_LOOP)
             {
                 char name[MAX_CHARS];
                 
                 strcpy(name, get_string("Rank %i: ", rank + 1));
 
+                // Get vote; valid == true; invalid == false
                 valid_vote = vote(rank, name, ranks, candidates, candidate_count);
 
+                // Get the next vote if valid
                 if (valid_vote)
                 {
                     break;
                 }
 
+                // Invalid vote
                 printf ("Invalid vote!\n");
+                loop++;
 
+                if (loop == MAX_LOOP)
+                {
+                    printf ("Too much invalid input! Start the program again!\n");
+                    return EXIT_FAILURE;
+                }
             }
         }
 
+        // Record voters' preferences
         record_preference(ranks, preferences, candidate_count);
 
         printf ("\n");
@@ -137,8 +154,14 @@ int main(int argc, char *argv[])
         pair[i].Loser = 0;
     }
 
-    
+    // Check for pairs where a candidate wins over the other candidate with higher margin
+    // Return how many pairs there are
     const int pair_count = add_pairs(preferences, MAX_PREFERENCE_LENGTH, pairs, pair);
+
+    if (pair_count <= 0)
+    {
+        return EXIT_FAILURE;
+    }
 
     //DEBUG add_pairs
     // printf ("\nAdd pairs\n");
@@ -147,14 +170,21 @@ int main(int argc, char *argv[])
     //     printf ("Candidate %i wins over %i by %i\n", pair[i].Winner, pair[i].Loser, pairs[i]);
     // }
 
-    sort_pairs(pairs, pair, pair_count);
+    // Sort pairs in decreasing order
+    // Most voted candidate will be the first
+    bool is_sorted = sort_pairs(pairs, pair, pair_count);
+
+    if (is_sorted == false)
+    {
+        return EXIT_FAILURE;
+    }
 
     //DEBUG sort_pairs
-    printf ("\nSorted pairs in decreasing order:\n");
-    for (int i = 0; i < pair_count; i++)
-    {
-        printf ("Candidate %i wins over %i by %i\n", pair[i].Winner, pair[i].Loser, pairs[i]);
-    }
+    // printf ("\nSorted pairs in decreasing order:\n");
+    // for (int i = 0; i < pair_count; i++)
+    // {
+    //     printf ("Candidate %i wins over %i by %i\n", pair[i].Winner, pair[i].Loser, pairs[i]);
+    // }
 
 
     // Create candidate graph
@@ -169,8 +199,16 @@ int main(int argc, char *argv[])
         }
     }
 
-    lock_pairs(pair, pair_count, candidate_count, locked);
+    // Lock pairs until they don't create a closed cycle
+    bool is_locked = lock_pairs(pair, pair_count, candidate_count, locked);
 
+    if (is_locked == false)
+    {
+        return EXIT_FAILURE;
+    }
+
+    // Print winner if there is any
+    // Return false if there is no winner
     bool is_winner = print_winner(locked, candidates, candidate_count);
 
     if (is_winner)
@@ -178,6 +216,7 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
     
+    printf ("No winner!\n");
     return EXIT_FAILURE;
 }
 
@@ -186,6 +225,8 @@ bool vote(int rank, char name[MAX_CHARS], int ranks[MAX_CANDIDATES], char candid
 {
     for (int cand = 0; cand < candidate_count; cand++)
     {
+        // If candidate name exists save candidates' index into ranks array
+        // The names are case sensitive!
         if (strcmp(name, candidates[cand]) == 0)
         {
             ranks[rank] = cand;
@@ -202,6 +243,7 @@ bool record_preference(int ranks[MAX_CANDIDATES], int preferences[MAX_PREFERENCE
     {
         for (int j = i + 1; j < candidate_count; j++)
         {
+            // Increment preference if candidate i preferred over candidate j
             preferences[ranks[i]][ranks[j]]++;
         }   
     }
@@ -218,33 +260,42 @@ int add_pairs(int preferences[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int
     {
         for (int j = i + 1; j < preference_length; j++)
         {
+            // Candidate i has more votes then candidate j
             if (preferences[i][j] > preferences[j][i])
             {
+                // Save how much votes candidate i has over candidate j
                 pairs[pair_count] = preferences[i][j];
 
+                // Save winner and loser candidates' index
                 pair_ref[pair_count].Winner = i;
                 pair_ref[pair_count].Loser = j;
 
                 pair_count++;
             }
+            // Candidate j has more votes then candidate i
             else if (preferences[i][j] < preferences[j][i])
             {
+                // Save how much votes candidate j has over candidate i
                 pairs[pair_count] = preferences[j][i];
 
+                // Save winner and loser candidates' index
                 pair_ref[pair_count].Winner = j;
                 pair_ref[pair_count].Loser = i;
 
                 pair_count++;
             }
+
+            // If candidate i and candidate j has the same votes then ignore that vote
         }
     }
 
     return pair_count;
 }
 
+// Use bubble-sort algorithm to sort the pairs in decreasing order
 bool sort_pairs(int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFERENCE_LENGTH], int pair_count)
 {
-    for (int i = 0; i < pair_count - 1; i++)
+    for (int i = 0; i < pair_count; i++)
     {
         bool is_no_change = true; 
 
@@ -252,22 +303,27 @@ bool sort_pairs(int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFE
         {
             if (pairs[j] < pairs[j + 1])
             {
+                // Swap pairs value
                 int temp = pairs[j];
                 pairs[j] = pairs[j + 1];
                 pairs[j + 1] = temp;
 
+                // Swap winner indexes
                 temp = pair_ref[j].Winner;
                 pair_ref[j].Winner = pair_ref[j + 1].Winner;
                 pair_ref[j + 1].Winner = temp;
 
+                // Swap loser indexes
                 temp = pair_ref[j].Loser;
                 pair_ref[j].Loser = pair_ref[j + 1].Loser;
                 pair_ref[j + 1].Loser = temp;
 
+                // There was a swap, need to do another cycle
                 is_no_change = false;
             }
         }
 
+        // Pairs are sorted
         if (is_no_change)
         {
             return true;
@@ -277,50 +333,67 @@ bool sort_pairs(int pairs[MAX_PREFERENCE_LENGTH], struct pair pair_ref[MAX_PREFE
 
 bool lock_pairs(struct pair pair_ref[MAX_PREFERENCE_LENGTH], int pair_count, int candidate_count, bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH])
 {   
-    if (pair_count == 0)
-    {
-        return false;
-    }
-
     int count = 0;
 
     while (count < pair_count)
     {
-        bool is_cycle = find_cycle(pair_ref[count].Winner, pair_ref[count].Loser, locked, candidate_count);
+        // Before locking a pair into the graph, check if it will close the cycle
+        // Return true if locking the pair will create a cycle
+        bool is_cycle_created = is_cycle(pair_ref[count].Winner, pair_ref[count].Loser, locked, candidate_count);
 
-        if (is_cycle)
+        // If locking the pair will create a cycle then don't lock the pair
+        if (is_cycle_created)
         {
             count++;
             continue;
         }
 
+        // Else lock the pair and continue checking the next pair
         locked[pair_ref[count].Winner][pair_ref[count].Loser] = true;
 
-        printf ("%i --> %i\n", pair_ref[count].Winner, pair_ref[count].Loser);
+        // DEBUG LOCKED PAIRS
+        // printf ("%i --> %i\n", pair_ref[count].Winner, pair_ref[count].Loser);
 
         count++;
     }
-    
+
     return true;
 }
 
-bool find_cycle(int winner, int loser, bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int candidate_count)
+bool is_cycle(int winner, int loser, bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], int candidate_count)
 {
-    while (true)
+    // winner is the winner we want to lock in
+    // loser is the loser we want to lock in
+
+    // We have to check if the loser has any connection to other candidates
+    // and if so, is the other candidate the same as the winner we want to lock in
+    // If yes, then we would make a closed cycle if we lock the pair in
+
+    int loop = 0;
+
+    const int max_loop = candidate_count * candidate_count;
+
+    while (loop < max_loop)
     {
+        // Check next edge if there is a connection from the loser to any other candidate
         bool check_next_edge = false;
 
         for (int i = 0; i < candidate_count; i++)
         {
             for (int j = 0; j < candidate_count; j++)
             {
+                // loser is the winner of other already locked in pair
                 if (locked[i][j] && i == loser)
                 {
+                    // Is the loser of that locked in pair the same as the winner
+                    // of the pair we want to lock in
                     if (j == winner)
                     {
+                        // Yes, we would create a closed cycle if we lock the pair in
                         return true;
                     } 
-
+                    // Save the loser of locked in pair and check if he is the winner
+                    // of other already locked in pair
                     else
                     {
                         loser = j;
@@ -331,17 +404,31 @@ bool find_cycle(int winner, int loser, bool locked[MAX_PREFERENCE_LENGTH][MAX_PR
                 }
             }
 
+            
             if (check_next_edge)
             {
                 break;
             }
         }
 
+        // If there is no edge to check then we can lock the pair in without
+        // creating a closed cycle
         if (check_next_edge == false)
         {
             return false;
         }
+
+        loop++;
+
+        // If there is too much loop cycle exit the function and disable to 
+        // lock in the pair
+        if (loop == max_loop)
+        {
+            return true;
+        }
     }
+
+    return true;
 }
 
 bool print_winner(bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], char candidates[MAX_CANDIDATES][MAX_CHARS], int candidate_count)
@@ -357,8 +444,11 @@ bool print_winner(bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], cha
         {
             for (int j = 0; j < candidate_count; j++)
             {
+                // Check if an edge (arrow) pointing to the given candidate
+                // If so, the candidate can't be the winner
                 if (locked[i][j] && j == candidate)
                 {
+                    // So check the next candidate
                     candidate++;
                     check_next_candidate = true;
 
@@ -372,6 +462,7 @@ bool print_winner(bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], cha
             }
         }
 
+        // If there is no other candidate to check then we found the winner
         if (check_next_candidate == false)
         {
             printf ("%s\n", candidates[candidate]);
@@ -379,6 +470,7 @@ bool print_winner(bool locked[MAX_PREFERENCE_LENGTH][MAX_PREFERENCE_LENGTH], cha
         }
     }
 
+    // winner hasn't been found
     return false;
 }
 
